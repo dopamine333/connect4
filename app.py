@@ -155,15 +155,28 @@ async def play(websocket, game, player, connected):
             #     await connection.send(json.dumps(event))
             websockets.broadcast(connected, json.dumps(event))
 
+# health check for fly
+import http
+async def health_check(path, request_headers):
+    if path == "/healthz":
+        return http.HTTPStatus.OK, [], b"OK\n"
+    
 async def main():
     # Set the stop condition when receiving SIGTERM.
     loop = asyncio.get_running_loop()
     stop = loop.create_future()
     loop.add_signal_handler(signal.SIGTERM, stop.set_result, None)
 
-    port = int(os.environ.get("PORT", "8001"))
-    async with websockets.serve(handler, "", port):
+    async with websockets.serve(
+        handler,
+        host="",
+        port=8080,
+        process_request=health_check,
+    ):
         await stop
+    # port = int(os.environ.get("PORT", "8001"))
+    # async with websockets.serve(handler, "", port):
+    #     await stop
 
 
 if __name__ == "__main__":
